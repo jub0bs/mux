@@ -97,6 +97,10 @@ type routeConf struct {
 	// if true, the the http.Request context will not contain the router
 	omitRouterFromContext bool
 
+	// If true, only ampersands (not semicolons) act as separators for
+	// query-parameter pairs.
+	strictQueryParamSep bool
+
 	// Manager for the variables from host and path.
 	regexp routeRegexpGroup
 
@@ -292,6 +296,24 @@ func (r *Router) OmitRouteFromContext(value bool) *Router {
 // RouterFromRequest will yield nil with this option.
 func (r *Router) OmitRouterFromContext(value bool) *Router {
 	r.omitRouterFromContext = value
+	return r
+}
+
+// StrictQueryParamSep defines which characters act as separators for
+// query-parameter pairs. The initial value is false, but beware: a future
+// version of this library will adopt true for the initial value.
+//
+// When true, only ampersands act as separators for query parameters.
+// This behavior complies with [the URL Living Standard].
+//
+// When false, both ampersands and semicolons act as separators for
+// query-parameter pairs. This contravenes the URL Living Standard and causes
+// interoperability problems that can lead to [security vulnerabilities].
+//
+// [security vulnerabilities]: https://github.com/gorilla/mux/issues/781
+// [the URL Living Standard]: https://url.spec.whatwg.org/#urlencoded-parsing
+func (r *Router) StrictQueryParamSep(value bool) *Router {
+	r.strictQueryParamSep = value
 	return r
 }
 

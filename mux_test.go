@@ -12,10 +12,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -2064,6 +2066,54 @@ func TestSkipClean(t *testing.T) {
 
 	if len(res.HeaderMap["Location"]) != 0 {
 		t.Errorf("Shouldn't redirect since skip clean is disabled")
+	}
+}
+
+func TestStrictQueryParamSep(t *testing.T) {
+	cases := []struct {
+		b     bool
+		pairs []string
+		want  map[string]string
+	}{
+		{
+			b:     false,
+			pairs: []string{"foo", "{foo}", "bar", "{bar}", "baz", "{baz}"},
+			want: map[string]string{
+				"foo": "foo",
+				"bar": "bar",
+				"baz": "baz",
+			},
+		}, {
+			b:     true,
+			pairs: []string{"foo", "{foo}", "baz", "{baz}"},
+			want: map[string]string{
+				"foo": "foo;bar=bar",
+				"baz": "baz",
+			},
+		},
+	}
+	for _, tc := range cases {
+		f := func(t *testing.T) {
+			var got map[string]string
+			handle := func(_ http.ResponseWriter, r *http.Request) {
+				got = Vars(r)
+			}
+			r := NewRouter()
+			if r.strictQueryParamSep {
+				t.Error("strickQueryParamSep should be false by default")
+			}
+			r.StrictQueryParamSep(tc.b)
+			r.HandleFunc("/", handle).Queries(tc.pairs...)
+
+			req := httptest.NewRequest("GET", "http://localhost/?foo=foo;bar=bar&baz=baz", nil)
+			res := NewRecorder()
+			r.ServeHTTP(res, req)
+
+			if !maps.Equal(got, tc.want) {
+				t.Errorf("unexpected query params: got %v; want %v", got, tc.want)
+			}
+		}
+		t.Run(strconv.FormatBool(tc.b), f)
 	}
 }
 

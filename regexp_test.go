@@ -52,7 +52,7 @@ func Test_findFirstQueryKey(t *testing.T) {
 			all, _ := url.ParseQuery(query)
 			for key, want := range all {
 				t.Run(key, func(t *testing.T) {
-					got, ok := findFirstQueryKey(query, key)
+					got, ok := findFirstQueryKey(query, key, false)
 					if !ok {
 						t.Error("Did not get expected key", key)
 					}
@@ -81,7 +81,7 @@ func Benchmark_findQueryKey(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				for key := range all {
-					_, _ = findFirstQueryKey(query, key)
+					_, _ = findFirstQueryKey(query, key, false)
 				}
 			}
 		})
